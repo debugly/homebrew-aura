@@ -1,0 +1,64 @@
+name: update aura cask (with checksum)
+
+# 由 debugly/fsplayer 的 aura-macos.yml 在发布 Aura-macos-<version> 后自动触发，
+# 把新版本号和 zip 的 sha256 写进 Casks/aura.rb。
+# 和 fsplayer-spm 的 upgrade-with-checksum.yml 同构：checksum 由源仓库算好后传进来，
+# 这里不再下载 zip 重算 —— release CDN 是最终一致的，刚发布时下载可能拿不到。
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Aura macOS 版本号（如 0.10.3）'
+        required: true
+        type: string
+      checksum:
+        description: 'Aura-macos-<version>.zip 的 SHA256'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: update-aura-cask
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Update formula
+      env:
+        VERSION: ${{ inputs.version }}
+        CHECKSUM: ${{ inputs.checksum }}
+      run: |
+        set -euo pipefail
+        test -n "$VERSION"  || { echo "::error::version 为空";  exit 1; }
+        test -n "$CHECKSUM" || { echo "::error::checksum 为空"; exit 1; }
+        echo "updating aura to ${VERSION} (${CHECKSUM})"
+
+        # cask 文件是本仓库的唯一真源，只改 version / sha256 两行，其余保持原样。
+        sed -i '' "s/^  version .*/  version \"${VERSION}\"/"          Casks/aura.rb
+        sed -i '' "s/^  sha256 \".*\"/  sha256 \"${CHECKSUM}\"/"      Casks/aura.rb
+
+        grep -q "version \"${VERSION}\""     Casks/aura.rb || { echo "::error::version 没替换上"; exit 1; }
+        grep -q "sha256 \"${CHECKSUM}\""     Casks/aura.rb || { echo "::error::sha256 没替换上"; exit 1; }
+        cat Casks/aura.rb
+
+    - name: Commit and push
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        git config user.name  'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+        if git diff --quiet -- Casks/aura.rb; then
+          echo "::notice::cask 已经是 ${VERSION}，无需改动"
+          exit 0
+        fi
+
+        git add Casks/aura.rb
+        git commit -m "chore: update aura to ${VERSION}"
+        git push
