@@ -9,8 +9,8 @@ cask "aura" do
 
   app "AuraPlayer.app"
 
-  after_install do
-    system("xattr", "-rd", "com.apple.quarantine", "#{staged_path}/AuraPlayer.app")
+  postinstall do
+    system("xattr", "-rd", "com.apple.quarantine", "/Applications/AuraPlayer.app")
   end
 
   zap trash: [
