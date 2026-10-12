@@ -1,6 +1,6 @@
 cask "aura" do
-  version "0.10.4"
-  sha256 "6124ebfc07216aa44dee3be80a1ff4b95cbc8e31546d0ff87ba078301842da07"
+  version "0.10.8"
+  sha256 "71222b28f1d8a4e3412bd65021051cc8633cb69602fa75b108e8f7ffd366ab7a"
 
   url "https://github.com/debugly/fsplayer/releases/download/Aura-macos-#{version}/Aura-macos-#{version}.zip"
   name "Aura"
