@@ -9,6 +9,10 @@ cask "aura" do
 
   app "AuraPlayer.app"
 
+  postflight do
+    system("xattr", "-rd", "com.apple.quarantine", "/Applications/AuraPlayer.app")
+  end
+
   zap trash: [
     "~/Library/Preferences/cn.debugly.AuraPlayer.plist",
     "~/Library/Caches/cn.debugly.AuraPlayer",
