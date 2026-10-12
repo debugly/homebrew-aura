@@ -38,8 +38,12 @@ jobs:
         echo "updating aura to ${VERSION} (${CHECKSUM})"
 
         # cask 文件是本仓库的唯一真源，只改 version / sha256 两行，其余保持原样。
-        sed -i '' "s/^  version .*/  version \"${VERSION}\"/"          Casks/aura.rb
-        sed -i '' "s/^  sha256 \".*\"/  sha256 \"${CHECKSUM}\"/"      Casks/aura.rb
+        # 这里刻意用 `sed -i.bak` + 删备份，而不是 macOS 的 `sed -i ''`：
+        # runner 是 ubuntu(GNU sed)，`-i ''` 会把空串当成下一个参数、即脚本，
+        # 于是报 "can't read s/...: No such file or directory"。GNU 和 BSD 都吃 -i.bak。
+        sed -i.bak "s/^  version .*/  version \"${VERSION}\"/"     Casks/aura.rb
+        sed -i.bak "s/^  sha256 \".*\"/  sha256 \"${CHECKSUM}\"/" Casks/aura.rb
+        rm -f Casks/aura.rb.bak
 
         grep -q "version \"${VERSION}\""     Casks/aura.rb || { echo "::error::version 没替换上"; exit 1; }
         grep -q "sha256 \"${CHECKSUM}\""     Casks/aura.rb || { echo "::error::sha256 没替换上"; exit 1; }
